@@ -15,6 +15,8 @@ using System.Windows.Shapes;
 using Microsoft.Win32;
 using System.Windows.Forms;
 using System.IO;
+using System.Web.Script.Serialization;
+using System.Xml.Linq;
 namespace XMLToDB
 {
     /// <summary>
@@ -22,9 +24,11 @@ namespace XMLToDB
     /// </summary>
     public partial class MainWindow : Window
     {
+        List<string> allPaths = new List<string>();
         public MainWindow()
         {
             InitializeComponent();
+            
         }
 
         private void btnOpenFile_Click(object sender, RoutedEventArgs e)
@@ -41,17 +45,26 @@ namespace XMLToDB
 
             if(!String.IsNullOrWhiteSpace(fbd.SelectedPath))
             {
+                //  txtEditor.Text = getXmlFile(fbd.SelectedPath);
+                var filePaths = getXmlFile(fbd.SelectedPath);
+                StringBuilder sb = new StringBuilder();
+                    var json = new object();
+                foreach (var item in filePaths)
+                {
+                    sb.Append(File.ReadAllText(item.ToString()));
+                    json = new JavaScriptSerializer().Serialize(GetXmlData(XElement.Parse(sb.ToString())));
+                }
 
-                txtEditor.Text = getXml(fbd.SelectedPath);
-               
+                txtEditor.Text = json.ToString();
+               // var json = new JavaScriptSerializer().Serialize(GetXmlData(XElement.Parse(sb.ToString())));
             }
 
 
         }
 
-        private string getXml(String Path)
-        { 
-             StringBuilder sb = new StringBuilder();
+        private List<String> getXmlFile(String Path)
+        {
+            
              if (!String.IsNullOrWhiteSpace(Path))
              {
                  
@@ -62,24 +75,33 @@ namespace XMLToDB
                  int fileCount = files.Length;
                  if(fldrCount ==0 && fileCount ==0)
                  {
-                     return sb.ToString();
+                     return allPaths;
                  }
 
                  while (fldrCount > 0)
                  {
                      fldrCount--;
-                     sb.AppendLine(getXml(folders[fldrCount]));
-                     
+                     //sb.AppendLine(getXmlFile(folders[fldrCount]));
+
+                    getXmlFile(folders[fldrCount]);
                  }
                  while(fileCount >0)
                  {
                      fileCount--;
-                     sb.AppendLine("Path:"+files[fileCount]);
-                    // sb.Append( File.ReadAllText(files[fileCount]));
+                   //  sb.AppendLine("Path:"+files[fileCount]);
+                     allPaths.Add( files[fileCount]);
                                          
                  }
              }
-             return sb.ToString();
+             return allPaths;
+        }
+        private static Dictionary<string, object> GetXmlData(XElement xml)
+        {
+            var attr = xml.Attributes().ToDictionary(d => d.Name.LocalName, d => (object)d.Value);
+            if (xml.HasElements) attr.Add("_value", xml.Elements().Select(e => GetXmlData(e)));
+            else if (!xml.IsEmpty) attr.Add("_value", xml.Value);
+
+            return new Dictionary<string, object> { { xml.Name.LocalName, attr } };
         }
     }
 }
