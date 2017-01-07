@@ -65,6 +65,7 @@
     </Compile>
     <Compile Include="codelibrary\ILogger.cs" />
     <Compile Include="codelibrary\LogEntry.cs" />
+    <Compile Include="codelibrary\XMLProcessor.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
